@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "IPv4 서브넷마스크 MAC주소"
-description: An example post which shows code rendering.
+description: 이더넷 네트워크 기본
 date:   2021-04-04
 categories: Ethernet Switch
 ---
