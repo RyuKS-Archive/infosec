@@ -1,0 +1,28 @@
+---
+layout: post
+title:  "IPv4 서브넷마스크 MAC주소"
+description: An example post which shows code rendering.
+date:   2021-04-04
+categories: Ethernet Switch
+---
+
+*#IPv4
+
+IPv4는 A,B,C,D,E 5가지 클래스로 나뉘어 짐
+일반적으로 사용하는 클래스는 A,B,C클래스 D,E는 테스트 용도로 사용된다.
+
+```
+A클래스 IP 0.0.0.0 ~ 127.255.255.255
+B클래스 IP 128.0.0.0 ~ 191.255.255.255
+C클래스 IP 192.0.0.0 ~ 223.255.255.255
+```
+
+```
+D클래스 IP 224.0.0.0 ~ 239.255.255.255
+E클래스 IP 240.0.0.0 ~ E
+```
+
+
+
+
+
