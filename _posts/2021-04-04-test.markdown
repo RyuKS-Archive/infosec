@@ -1,8 +1,8 @@
 ---
 layout: post
-title:  "Coding Post"
+title:  "텍스트 테스트"
 description: An example post which shows code rendering.
-date:   2019-05-23 21:03:36 +0530
-categories: Javascript NodeJS
+date:   2021-04-04 14:32:36 
+categories: network linux
 ---
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor 
+'''테스트라인
