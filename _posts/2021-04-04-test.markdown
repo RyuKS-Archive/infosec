@@ -2,7 +2,7 @@
 layout: post
 title:  "텍스트 테스트"
 description: An example post which shows code rendering.
-date:   2021-04-04 14:32:36 -00:00
+date:   2021-04-04 %tt:%mm:%ss -00:00
 categories: network linux
 ---
 '''테스트라인
