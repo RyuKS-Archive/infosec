@@ -1,0 +1,64 @@
+---
+layout: post
+title:  "VM웨어 CentOS 설치"
+description: 학습용 설치 방법
+date:   2021-04-05
+categories: VM웨어
+---
+
+# CentOS에서 통신을 하기 위한 VM웨어 네트워크 가상화 설정
+    
+1. VM웨어 메뉴란 edit - network editor
+2. NAT 선택 Subnet ip 10.0.0.0 설정
+3. Subnet Mask 255.255.255.0 설정
+4. NAT Setting 들어가서 Gateway 10.0.0.2 설정
+    
+# VM웨어 CentOS 설치 (수정 필요한 부분만 언급하지 않는 나머지 설정은 Default 그대로 설치)
+    
+1. custom 선택
+2. linux, CentOS 7 선택
+3. 설치 디렉토리 D\VM\ (C설치시 부하걸림)
+4. 가상머신 Process 2개, Memory 4GB, HDD 30GB 설정
+5. 완료 후 DVD 이미지 파일 경로 찾아서 넣어 줌
+6. VM웨어 기동
+7. 첫 화면에서 1분의 시간을 주며 디폴트 설정을 할 것인지 묻는데 TAB을 눌러 디폴트 네이밍 설정을 하지 않도록 설정
+> net.ifnames=0 biosdevname=0 입력
+8. GUI 설치 모드로 전환 되면 한국어 선택
+9. 설치대상을 눌러서 파티션을 설정합니다 클릭
+10. -로 기존 디폴트 파티션 삭제 +로 /boot 1G, swap 6G, / 입력하지 않고 나머지 모든 용량을 줌
+> g로 쓰면 1000mb 단위 G로 쓰면 1024mb 단위, swap은 보통 메모리의 1.5 ~ 2배로 설정
+11. 설치 시작화면에서 root 비밀번호 설정 ex)123qwe
+12. 재부팅 후 로그인 root / 123qwe
+
+# CentOS 7 네트워크 연결 설정
+    
+1. ip a로 인터넷 설정 확인
+2. vi /etc/sysconfig/network-script/ifcfg-eth0
+> 디폴트 네이밍 잘못 설정시 파일명 ifcfg-eth0로 나오지 않음
+3. 가독성을 주기 위해 esc - : - se nu 입력하여 라인 넘버 나오도록 설정
+4. INSERT모드 진입
+```
+BOOTPROTO=static
+ONBOOT=yes
+IPADDR=10.0.0.30 (VM웨어 가상 네트워크 설정시 입력한 A클래스 아무거나)
+PREFIX=24 (서브넷마스크 24비트를 고정하여 네트워크 설정 NETMASK=255.255.255.0과 같은 설정)
+GATEWAY=10.0.0.2 (VM웨어 가상 네트워크 설정시 입력한 Gateway)
+DNS1=8.8.8.8
+```
+5. esc - :wq로 저장 후 vi편집기 종료
+6. systemctl restart network 입력 네트워크 시스템 재시작
+7. ip a 로 네트워크 설정이 되어있는지 확인
+8. DNS서버로 ping 테스트 ping 8.8.8.8
+> Ctrl + c로 종료
+
+# CentOS 7 기본 명령어
++ ls 현재 경로의 파일 리스트 (-al 모든 파일 리스트)
++ mkdir [이름] 현재 경로에 디렉토리 생성
++ touch [이름] 현재 경로에 파일 생성
+    
++ mount -t iso9660 /dev/cdrom /root/[디렉토리]/ -o loop
+> 마운트 전 VM웨어 DVD 커넥션 활성화
+
++ shutdown -h now 리눅스 종료
+
+
