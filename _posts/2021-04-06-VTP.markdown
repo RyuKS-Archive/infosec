@@ -3,7 +3,7 @@ layout: post
 title:  "VTP 설정"
 description: VTP설정과 Switch 설정 초기화, 저장 방법
 date:   2021-04-06
-categories: VM웨어
+categories: VTP
 ---
     
     
