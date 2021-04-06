@@ -1,0 +1,33 @@
+---
+layout: post
+title:  "SVI 설정"
+description: SVI 설정
+date:   2021-04-06
+categories: SVI
+---
+    
+    
+# L3 스위치 가상 네트워크 설정 (SVI)
+1. PC1, 2, 3, 4 ip설정 
+> + PC1, 3는 192.168.1.10 - 20
+> + PC2, 4는 192.168.2.10 - 20
+> + 서브넷마스크 255.255.255.0으로 네트워크 분리    
+2. PC1, 2는 L2스위치1에 연결 PC3, 4는 L2스위치2에 연결
+3. PC1, 3은 Vlan 10 설정 PC2, 4는 Vlan 20설정
+4. L2스위치1,2 Trunk 포트 설정 
+5. L2스위치1,2를 L3스위치에 연결
+6. L3스위치 CLI
+```
+enable - configure terminal - vlan 10, vlan 20 생성
+interface vlan 10, 20 각 Vlan인터페이스로 들어가 게이트웨이 설정
+vlan 10은 ip address 192.168.1.1 255.255.255.0 - no sh
+vlan 20은 ip address 192.168.2.1 255.255.255.0 - no sh (no sh는 ip입력 후 반드시 입력해 줘야 함)
+```
+7. L3스위치 Trunk 포트 설정
+```
+enable - configure terminal - interface range gigaEthernet 0/1-2 (L2스위치와 연결한 포트)
+switchport trunk encapsulation dot1q 
+```
+8. PC1, 2, 3, 4 게이트웨이 설정 (L3에서 설정한 게이트웨이 ip 입력)
+> + Vlan 10은 192.168.1.1 Vlan 20은 192.168.2.1
+ 
