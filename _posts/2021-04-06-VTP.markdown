@@ -1,0 +1,43 @@
+---
+layout: post
+title:  "VTP 설정"
+description: VTP설정과 Switch 설정 초기화, 저장 방법
+date:   2021-04-06
+categories: VM웨어
+---
+    
+    
+# VTP설정
+    
+1. Vlan 정보를 받기 위해 각 스위치 Trunk 포트 설정
+2. 루트 브릿지 스위치 CLI
+> + configure terminal
+> + vtp ver 2
+> + vtp mode server
+> + vtp domain [이름]
+> + vtp pass [비밀번호]
+3. 나머지 스위치 CLI
+> + configure terminal
+> + vtp ver 2 (루트 브릿지 스위치에서 설정한 값과 똑같아야 함)
+> + vtp mode client
+> + vtp domain [이름] 
+> + vtp pass [비밀번호]
+    
+    
+# Switch 설정 초기화
+1. erase startup-config
+2. del vlan.dat (dir로 확인가능)
+3. write erase
+4. reload
+    
+    
+# Switch 설정 저장
+1.wr (write memory)
+2.copy r st (copy running-config startup-config)
+    
+    
+
+
+
+
+
