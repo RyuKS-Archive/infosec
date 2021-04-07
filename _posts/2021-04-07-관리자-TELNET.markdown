@@ -1,9 +1,9 @@
 ---
 layout: post
-title:  "VTP 설정"
-description: VTP설정과 Switch 설정 초기화, 저장 방법
+title:  "SWITCH TELNET 설정 / 서브넷"
+description: TELNET 설정과 서브넷 예시
 date:   2021-04-06
-categories: VTP
+categories: telnet subnet
 ---
     
     
