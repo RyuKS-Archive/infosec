@@ -1,0 +1,25 @@
+---
+layout: post
+title:  "DHCP 서비스"
+description: DHCP 서비스 설정
+date:   2021-04-06
+categories: dhcp
+---
+    
+    
+# DHCP 서비스 설정 방법
++ IP를 사용하는 DHCP 서비스는 L3스위치 부터 설정이 가능하다 
+    
+1. configure terminal - ip rounting
+2. ip dhcp pool [이름]
+3. net [dhcp로 할당하고자 하는 ip 네트워크] (ex: net 192.168.1.0 255.255.255.0로 설정하면 192.168.1.0 네트워크의 255개의 ip를 할당)
+4. default-router [게이트웨이로 지정하고자 하는 ip] (ex: default-router 192.168.1.254)
+5. dns server 8.8.8.8
+6. exit - ip dhcp excluded-address [dhcp 서비스로 할당하지 않는 ip 지정] 
+> (게이트웨이로 설정한 192.168.1.254는 당연히 할당되면 안되기 때문에 게이트웨이 ip를 설정해준다)
+7. service dhcp (dhcp 서비스 시작)
+8. vlan [번호] 생성 후 interface vlan [번호]
+9. ip address [dhcp 게이트웨이 ip] 255.255.255.0
+10. L2스위치에서 vlan [번호] 생성후 포트 설정해주고 L2스위치와 L3스위치가 연결된 모든 포트 캡슐화 및 Trunk 포트 설정
+    
+    
