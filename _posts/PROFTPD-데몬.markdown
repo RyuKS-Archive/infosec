@@ -1,0 +1,49 @@
+---
+layout: post
+title:  "Proftpd 데몬을 이용한 FTP 설정"
+description: linux proftpd
+date:   2021-04-09
+categories: linux profptd ftp
+---
+    
+    
+##  Proftpd 데몬 설정
+    
+1. rpm으로 lynx 설치
+2. lynx를 이용해 proftpd 다운로드 페이지 접속 (lynx proftpd.org)
+3. proftpd gz 파일 다운로드 후 저장
+4. /root/src로 저장
+5. tar -zxvf로 건집 압축 및 파일 묶음 풀기
+6. /root/src/[proftpd gz 압축을 푼 디렉토리]
+7. ls 후 configure 설치설정 파일 확인
+8. ./configure --prefix=[설치(복사) 경로 지정] --sysconfdir=[설정파일 설치(복사) 경로 지정] && (&는 백그라운드 &&는 포그라운드로 순서대로 실행) make (설치파일 생성) && make install (설치(복사) 실행) && echo $? (표준출력 Echo로 설치결과 return값을 $? 변수로 받아 표시) 
+```
+예시) ./configure --prefix=/server/proftpd -- sysconfdir=/server/conf/proftpd && make && make install && echo $?
+
+설치 중 에러 발생, 실패시 make clean 
+```
+9. sysconfdir에서 설정한 경로로 들어가 복사된 설정파일을 vi편집기로 수정
+```
+DefaultAddress = 10.0.0.30 (FTP서버 역할을 할 리눅스의 IP)
+
+Group nobody로 수정
+
+esc :wq
+```
+10. prefix에서 설정한 proftpd가 설치(복사)된 경로로 들어가서 ls 
+11. root용 실행 파일이 있는 cd ./sbin으로 이동
+12. ls 후 proftpd 데몬 실행 파일 확인
+13. .proftpd & (proftpd 데몬 실행 &는 백그라운드로 실행)
+14. jobs로 백그라운드로 작업중인 데몬 확인 (인터럽트 걸렸을시 표시)
+15. 방화벽에 FTP설정 추가
+```
+firewall-cmd --add-service=ftp (방화벽에 FTP 서비스 추가) --permanent (설정 저장 재부팅 해도 유지)
+firewall-cmd reload (방화벽 재기동)
+```
+16. ps -ef | grep proftpd (현재 실행중인 프로세스 확인)
+```
+ps -ef (현재 실행중인 모든 프로세서 표기) | grep proftpd (그 중에서 proftpd만 골라 표기)
+```
+
+
+
