@@ -18,7 +18,7 @@ categories: linux profptd ftp
 7. ls 후 configure 설치설정 파일 확인
 8. ./configure --prefix=[설치(복사) 경로 지정] --sysconfdir=[설정파일 설치(복사) 경로 지정] && (&는 백그라운드 &&는 포그라운드로 순서대로 실행) make (설치파일 생성) && make install (설치(복사) 실행) && echo $? (표준출력 Echo로 설치결과 return값을 $? 변수로 받아 표시) 
 ```
-예시) ./configure --prefix=/server/proftpd -- sysconfdir=/server/conf/proftpd && make && make install && echo $?
+예시) ./configure --prefix=/server/proftpd --sysconfdir=/server/conf/proftpd && make && make install && echo $?
 
 설치 중 에러 발생, 실패시 make clean 
 ```
