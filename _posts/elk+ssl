@@ -1,0 +1,182 @@
+#grub 비밀번호 설정
+grub2-mkpasswd-pbkdf2
+
+vi /etc/grub.d/40_custom
+set superusers="root"
+password_pbkdf2 root
+grub.pbkdf2.sha512.100..... ..... ....
+
+grub2-mkconfig -o /boot/grub2/grub.cfg
+
+재부팅 후 부팅화면에서 grub수정 화면으로 가면(e)
+비밀번호를 입력하도록 함
+
+#업데이트 자동설정
+yum -y install yum-cron
+vi /etc/yum/yum-cron.conf
+update_messages =	//업데이트 가능시 메일 보냄
+download_updates		//업데이트 가능시 다운로드
+apply_updates		//다운로드 완료시 시스템에 반영
+
+#sudoer만들기
+vi /etc/pam.d/su
+auth            required        pam_wheel.so use_uid		//wheel그룹 활성화
+
+usermod -G wheel cent
+
+#root와 똑같은 메일을 받기
+vi /etc/aliases
+root: cent
+
+# 커맨드별로 권한 부여하기
+vi /etc/sudoers
+계정명	호스트명=(실행계정명)	[NOPASS]	커맨드
+cent	ALL=(root)	/sbin/passwd
+
+#root 사용 못하게 하기(/etc/securetty)
+내용물 전체 삭제
+
+#패스워드 내용 설정
+chage user1
+
+
+
+#APM세팅
+ServerName 도메인사용
+     95	ServerName rpgmaster.com:80
+    151    AllowOverride All
+    164    DirectoryIndex index.html index.php
+    354	ServerTokens Prod
+
+ServerTokens : 	Prod - 이름만
+		Major - 이름 + 버전
+		Minor - 이름 + 버전
+		Min - 이름 + 버전
+		OS - 이름 + 버전 + 운영체제
+		full - 싹다
+
+
+#SSL(https)사용하기(Apache)
+1. 인증서 만들기
+cd /etc/pki/tls/certs/
+make server.key
+openssl rsa -in server.key -out server.key
+make server.csr
+openssl x509 -in server.csr -out server.crt -req -signkey server.key  -days 3650
+openssl rsa -in server.key -text > private.pem
+openssl x509 -inform PEM -in server.crt > public.pem
+
+2. ssl모듈 설치하기
+yum -y install mod_ssl
+vi /etc/httpd/conf.d/ssl.conf
+     59 DocumentRoot "/var/www/html"
+     60 ServerName rpgmaster.com:443
+     75 SSLProtocol -All +TLSv1 +TLSv1.1 +TLSv1.2
+    100 SSLCertificateFile /etc/pki/tls/certs/server.crt
+    107 SSLCertificateKeyFile /etc/pki/tls/certs/server.key
+
+
+
+==============================================
+vi /etc/httpd/conf.d/vhost.conf
+<VirtualHost *:80>
+        DocumentRoot /var/www/html
+        ServerName rpgmaster.com
+        RewriteEngine On
+        RewriteCond %{HTTPS} off
+        RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+</VirtualHost>
+==============================================
+
+#SSL(https)사용하기(MariaDB)
+cp ./* /etc/opt/rh/rh-mariadb103/pki/
+chown -R mysql. /etc/opt/rh/rh-mariadb103/pki/*
+
+vi /etc/opt/rh/rh-mariadb103/my.cnf.d/mariadb-server.cnf
+[mysqld]
+ssl-ca=/etc/opt/rh/rh-mariadb103/pki/server.csr
+ssl-cert=/etc/opt/rh/rh-mariadb103/pki/public.pem
+ssl-key=/etc/opt/rh/rh-mariadb103/pki/private.pem
+
+systemctl restart rh-mariadb103-mariadb
+
+#확인해봅시다.
+mysql -u root -p
+show variables like '%ssl%';
+
+mysql -u root -p --ssl
+show status like 'ssl_cipher';
+
+
+#모니터링 시스템 구축(feat ELK)
+ELK설치
+vi /etc/kibana/kibana.yml	(SSL적용)
+     51 server.ssl.certificate: /etc/pki/tls/certs/public.pem
+     52 server.ssl.key: /etc/pki/tls/certs/private.pem
+
+filebeat설치
+vi /etc/filebeat/filebeat.yml
+     24   enabled: true
+    151   host: "https://rpgmaster.com:5601"
+
+vi /etc/filebeat/filebeat.reference.yml
+   4115   host: "rpgmaster.com:5601"
+   4147   ssl.verification_mode: none
+
+vi /etc/hosts
+10.0.0.30 rpgmaster.com
+
+filebeat modules list | grep apache
+filebeat modules enable apache
+filebeat setup -e
+
+==============================================
+mysql_secure_installation
+뒤는 읽어보고 알아서...
+
+==============================================
+#Elasticsearch X-Pack
+1. X-PACK활성화
+kibana설정 화면에서 stack management -> license management
+활성화!!
+
+vi /etc/elasticsearch/elasticsearch.yml
+마지막줄에 추가
+xpack.license.self_generated.type: trial
+xpack.monitoring.collection.enabled: true
+xpack.security.enabled: true
+
+systemctl restart elasticsearch kibana logstash
+
+/usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive
+
+cd /usr/share/elasticsearch/bin/
+./elasticsearch-certutil ca
+./elasticsearch-certutil cert --ca elastic-stack-ca.p12
+
+cd /usr/share/elasticsearch/
+chgrp elasticsearch elastic-certificates.p12 elastic-stack-ca.p12
+chmod 640 elastic-certificates.p12 elastic-stack-ca.p12
+mv -v ./elastic-* /etc/elasticsearch/
+
+
+cd /usr/share/elasticsearch/bin/
+./elasticsearch-keystore add xpack.security.transport.ssl.keystore.secure_password
+./elasticsearch-keystore add xpack.security.transport.ssl.truststore.secure_password
+
+vi /etc/elasticsearch/elasticsearch.yml
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.verification_mode: certificate
+xpack.security.transport.ssl.keystore.path: /etc/elasticsearch/elastic-certificates.p12
+xpack.security.transport.ssl.truststore.path: /etc/elasticsearch/elastic-certificates.p12
+
+systemctl restart elasticsearch
+
+#아까 써먹은 pem을 적용해서 kibana와 elastic에 적용
+cd /etc/pki/tls/certs/
+cp -v private.pem /etc/elasticsearch/
+cp -v public.pem /etc/elasticsearch/
+
+
+
+
