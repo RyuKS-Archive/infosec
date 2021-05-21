@@ -1,0 +1,216 @@
+Window hosts 파일 설정 windows/system32/drivers/etc/hosts
+
+/*
+centos /etc/hosts 파일 설정
+
+hostname test.com
+hostnamectl set-hostname test.com
+*/
+
+=====================레포지토리 추가====================
+yum -y install http://rpms.famillecollet.com/enterprise/remi-release-7.rpm
+yum -y install centos-release-scl-rh centos-release-scl
+
+#yum -y install epel-release
+
+sed -i -e "s/enabled=1/enabled=0/g" /etc/yum.repos.d/CentOS-SCLo-scl.repo
+sed -i -e "s/enabled=1/enabled=0/g" /etc/yum.repos.d/CentOS-SCLo-scl-rh.repo
+
+#sed -i -e "s/enabled=1/enabled=0/g" /etc/yum.repos.d/remi-safe.repo
+
+====================아파치 설치하기=====================
+1. 아파치 설치하기
+yum -y install httpd
+
+2. 설정하기
+vi /etc/http/conf/httpd.conf
+ServerName 도메인사용
+ServerName test.com:80 		(line:95)	
+AllowOverride All	    		(line:151) 	
+DirectoryIndex index.html index.php     (line:164)
+ServerTokens Prod	    		(line:354)
+
+systemctl enable httpd
+systemctl start httpd
+
+
+================ 마리아DB설치하기 ======================
+1. 리포지터리 추가하기
+
+
+2. MariaDB설치하기
+yum -y install --enablerepo=centos-sclo-rh rh-mariadb103-mariadb-server
+
+3. SCL에 MariaDB 등록하기
+scl enable rh-mariadb103 bash
+
+4. 설정하기
+vi /etc/opt/rh/rh-mariadb103/my.cnf.d/mariadb-server.cnf
+
+[mysqld]섹션안에 
+character-set-server=utf8
+
+5. 실행하기
+systemctl eneable rh-mariadb103-mariadb
+systemctl start rh-mariadb103-mariadb
+
+6. DB생성 및 설정하기
+mysql_secure_installation
+
+
+
+================== PHP 설치하기 =========================
+yum -y install --enablerepo=remi-safe php73 php73-php-pear php73-php-mbstring
+
+설치 확인
+php73 -v
+
+scl enable php73 bash
+
+#아파치와 연동하기
+yum -y install --enablerepo=remi-safe php73-php-fpm
+
+vi /etc/httpd/conf.d/php.conf
+<FilesMatch \.php$>
+        SetHandler "proxy:fcgi://127.0.0.1:9000"
+</FilesMatch>
+AddType text/html       .php
+DirectoryIndex          index.php
+
+
+systemctl enable php73-php-fpm
+systemctl start php73-php-fpm
+systemctl restart httpd
+
+index.php파일 만들기
+<?php phpinfo(); ?>
+
+firewall-cmd --add-sevice=http --permanent
+firewall-cmd --reload
+
+============== ELK Stack =============
+
+
+1. 자바 설치
+yum -y install java-11-openjdk java-11-openjdk-devel
+
+/*
+cat > /etc/profile.d/java11.sh <<EOF
+export JAVA_HOME=$(dirname $(dirname $(readlink $(readlink $(which javac)))))
+export PATH=\$PATH:\$JAVA_HOME/bin
+EOF
+
+
+source /etc/profile.d/java11.sh
+
+확인 alternatives --config java
+*/
+
+java --version
+
+
+
+2. 일래스틱 서치 설치
+
+vi /etc/yum.repos.d/elasticsearch.repo
+[elasticsearch-7.x]
+name=Elasticsearch repository for 7.x packages
+baseurl=https://artifacts.elastic.co/packages/7.x/yum
+gpgcheck=1
+gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+enabled=1
+autorefresh=1
+type=rpm-md
+
+yum -y install elasticsearch
+systemctl enable elasticsearch
+systemctl start elasticsearch
+
+확인 curl localhost:9200
+
+firewall-cmd --add-port={9200/tcp,9300/tcp} --permanent
+firewall-cmd --reload
+
+3. 키바나 설치
+yum -y install kibana
+vi /etc/kibana/kibana.yml
+      8 server.host: "0.0.0.0"
+
+systemctl enable kibana
+systemctl start kibana
+
+firewall-cmd --add-port=5601/tcp --permanent
+firewall-cmd --reload
+
+4. logstash 설치
+yum -y install logstash
+
+5. filebeat 설치
+yum -y install filebeat
+filebeat setup -e
+systemctl enable filebeat
+systemctl start filebeat
+
+======================OPENSSL=======================
+
+#SSL(https)사용하기
+1. 인증서 만들기
+cd /etc/pki/tls/certs/
+make server.key
+openssl rsa -in server.key -out server.key
+make server.csr
+
+[입력Start]
+Country Name (2 letter code) [XX]:KR
+State or Province Name (full name) []:DEAGU
+Locality Name (eg, city) [Default City]:DONGGU
+Organization Name (eg, company) [Default Company Ltd]:KB
+Organizational Unit Name (eg, section) []:GYOMU
+Common Name (eg, your name or your server's hostname) []:test.com
+Email Address []:
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:
+An optional company name []:
+[입력End]
+
+openssl x509 -in server.csr -out server.crt -req -signkey server.key -days 3650
+openssl rsa -in server.key -text > private.pem
+openssl x509 -inform PEM -in server.crt > public.pem
+
+2. ssl모듈 설치하기
+yum -y install mod_ssl
+vi /etc/httpd/conf.d/ssl.conf
+     59 DocumentRoot "/var/www/html"
+     60 ServerName test.com:443
+     75 SSLProtocol -All +TLSv1 +TLSv1.1 +TLSv1.2
+    100 SSLCertificateFile /etc/pki/tls/certs/server.crt
+    107 SSLCertificateKeyFile /etc/pki/tls/certs/server.key
+
+vi /etc/httpd/conf.d/vhost.conf
+<VirtualHost *:80>
+        DocumentRoot /var/www/html
+        ServerName test.com
+        RewriteEngine On
+        RewriteCond %{HTTPS} off
+        RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+</VirtualHost>
+
+firewall-cmd --add-service=https --permanent
+firewall-cmd --reload
+systemctl restart httpd
+
+#SSL(https)사용하기(MariaDB)
+cp ./* /etc/opt/rh/rh-mariadb103/pki/
+chown -R mysql. /etc/opt/rh/rh-mariadb103/pki/*
+
+vi /etc/opt/rh/rh-mariadb103/my.cnf.d/mariadb-server.cnf
+[mysqld]
+ssl-cert=/etc/opt/rh/rh-mariadb103/pki/public.pem
+ssl-key=/etc/opt/rh/rh-mariadb103/pki/private.pem
+
+systemctl restart rh-mariadb103-mariadb
+
+#확인해봅시다.
+mysql -u root -p --ssl
+show status like 'ssl_cipher';
